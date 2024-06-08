@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreSpecialistRequest;
+use App\Jobs\GenerateReportJob;
 use App\Models\Specialist;
 use DateInterval;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -55,19 +57,21 @@ class SpecialistController extends Controller
 
     public function highestRated(int $limit = 10)
     {
-        $specialists = Cache::remember(
-            'highest_rated_specialists',
-            new DateInterval('PT30S'),
-            fn () => Specialist::select(
-                ['specialists.id', 'specialists.name', DB::raw('avg(reviews.rating) avg_rating')]
-            )
-                ->join('reviews', 'reviews.specialist_id', '=', 'specialists.id')
-                ->groupBy(['specialists.id', 'specialists.name'])
-                ->orderBy('avg_rating', 'desc')
-                ->limit($limit)
-                ->get()
-        );
+        GenerateReportJob::dispatch(Auth::user()->email);
+        return response()->noContent();
 
-        return $specialists;
+        // $specialists = Cache::remember(
+        //     'highest_rated_specialists',
+        //     new DateInterval('PT30S'),
+        //     fn () => Specialist::select(
+        //         ['specialists.id', 'specialists.name', DB::raw('avg(reviews.rating) avg_rating')]
+        //     )
+        //         ->join('reviews', 'reviews.specialist_id', '=', 'specialists.id')
+        //         ->groupBy(['specialists.id', 'specialists.name'])
+        //         ->orderBy('avg_rating', 'desc')
+        //         ->limit($limit)
+        //         ->get()
+        // );
+        // return $specialists;
     }
 }
